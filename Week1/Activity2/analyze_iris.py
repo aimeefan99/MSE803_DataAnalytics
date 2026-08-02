@@ -10,6 +10,7 @@ y = iris.data.targets
 data = X.join(y)
 
 classes = y.iloc[:, 0].unique()
+class_counts = y.iloc[:, 0].value_counts()
 duplicate_count = data.duplicated().sum()
 duplicate_rows = data[data.duplicated(keep=False)]
 
@@ -20,6 +21,8 @@ Number of features: {X.shape[1]}
 Feature columns: {", ".join(X.columns)}
 Number of classes: {len(classes)}
 Classes: {", ".join(classes)}
+Records per class:
+{class_counts.to_string()}
 Duplicate records found: {"Yes" if duplicate_count > 0 else "No"}
 Duplicate record count: {duplicate_count}
 """

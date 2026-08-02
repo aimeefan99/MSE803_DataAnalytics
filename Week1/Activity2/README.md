@@ -25,8 +25,9 @@ This activity explores the basic structure of the dataset:
 3. Stored `iris.data.features` as `X` and `iris.data.targets` as `y`.
 4. Counted the number of feature columns in `X`.
 5. Counted the distinct target classes in `y`.
-6. Joined `X` and `y`, then checked duplicate records by comparing every complete row.
-7. Saved the analysis output to `analysis_results.txt`.
+6. Counted how many records belong to each class.
+7. Joined `X` and `y`, then checked duplicate records by comparing every complete row.
+8. Saved the analysis output to `analysis_results.txt`.
 
 ## Findings
 
@@ -35,13 +36,19 @@ This activity explores the basic structure of the dataset:
 - Feature columns: `sepal length`, `sepal width`, `petal length`, `petal width`
 - Number of classes: 3
 - Classes: `Iris-setosa`, `Iris-versicolor`, `Iris-virginica`
+- Records per class:
+  - `Iris-setosa`: 50
+  - `Iris-versicolor`: 50
+  - `Iris-virginica`: 50
 - Duplicate records: yes
-- Duplicate record count: 2 additional duplicate records beyond their first occurrence
+- Duplicate record count: 3 additional duplicate records beyond their first occurrence
 - Duplicate groups: 2
+
+Note: `data.duplicated().sum()` counts only the extra duplicated records after the first occurrence. The duplicate table lists all rows involved in duplication, including the original rows.
 
 The duplicate groups are:
 
-- Rows 10 and 35: `4.9, 3.1, 1.5, 0.1, Iris-setosa`
+- Rows 10, 35, and 38: `4.9, 3.1, 1.5, 0.1, Iris-setosa`
 - Rows 102 and 143: `5.8, 2.7, 5.1, 1.9, Iris-virginica`
 
 ## How to Run
@@ -50,7 +57,7 @@ From the repository root:
 
 ```bash
 python3 -m pip install -U ucimlrepo
-python3 Week1/analyze_iris.py
+python3 Week1/Activity2/analyze_iris.py
 ```
 
-The script prints the findings and writes the same result to `Week1/analysis_results.txt`.
+The script prints the findings and writes the same result to `Week1/Activity2/analysis_results.txt`.

@@ -5,12 +5,17 @@ Number of features: 4
 Feature columns: sepal length, sepal width, petal length, petal width
 Number of classes: 3
 Classes: Iris-setosa, Iris-versicolor, Iris-virginica
+Records per class:
+Iris-setosa        50
+Iris-versicolor    50
+Iris-virginica     50
 Duplicate records found: Yes
-Duplicate record count: 2
+Duplicate record count: 3
 
 Duplicate rows:
      sepal length  sepal width  petal length  petal width           class
 9             4.9          3.1           1.5          0.1     Iris-setosa
 34            4.9          3.1           1.5          0.1     Iris-setosa
+37            4.9          3.1           1.5          0.1     Iris-setosa
 101           5.8          2.7           5.1          1.9  Iris-virginica
 142           5.8          2.7           5.1          1.9  Iris-virginica
