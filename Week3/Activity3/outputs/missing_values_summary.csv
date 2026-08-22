@@ -1,0 +1,20 @@
+Column,Missing Before Cleaning,Missing After Cleaning,Missing Reduction
+No,0,0,0
+year,0,0,0
+month,0,0,0
+day,0,0,0
+hour,0,0,0
+PM2.5,8739,0,8739
+PM10,6449,0,6449
+SO2,9021,0,9021
+NO2,12116,0,12116
+CO,20701,0,20701
+O3,13277,0,13277
+TEMP,398,0,398
+PRES,393,0,393
+DEWP,403,0,403
+RAIN,390,0,390
+wd,1822,0,1822
+WSPM,318,0,318
+station,0,0,0
+datetime,0,0,0
