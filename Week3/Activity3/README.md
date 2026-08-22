@@ -10,7 +10,7 @@ This activity develops a statistical data analysis project using the Beijing Mul
 - `analysis_report.md`: generated statistical analysis report
 - `requirements.txt`: Python packages required to run the script
 - `outputs/`: generated CSV summaries and charts
-- `data/raw/`: optional fallback location for the downloaded UCI zip file or extracted raw CSV files
+- `rawdata/`: location for the manually downloaded and extracted raw CSV files
 
 ## How to Run
 
@@ -32,25 +32,19 @@ Run the analysis from inside `Week3/Activity3`:
 python air_quality_analysis.py
 ```
 
-The script loads the dataset from UCI using:
-
-```python
-fetch_ucirepo(id=501)
-```
-
-If the UCI package reports that this dataset is not available for import, the script will automatically try the official UCI zip file URL:
+Before running the script, manually download the dataset from:
 
 ```text
 https://archive.ics.uci.edu/static/public/501/beijing+multi+site+air+quality+data.zip
 ```
 
-If automatic downloading is blocked, manually download the zip file and place it in:
+Extract the zip file until the station-level CSV files are available, then place those extracted files under:
 
 ```text
-Week3/Activity3/data/raw/
+Week3/Activity3/rawdata/
 ```
 
-Run the script again after placing the file there.
+The script reads `PRSA_Data_*.csv` files from `rawdata/` and then generates the report and outputs.
 
 ## Analysis Included
 

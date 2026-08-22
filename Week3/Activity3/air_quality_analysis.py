@@ -2,9 +2,6 @@ from pathlib import Path
 import os
 from string import Template
 import tempfile
-from urllib.error import URLError
-from urllib.request import urlretrieve
-from zipfile import ZipFile
 
 MPL_CONFIG_DIR = Path(tempfile.gettempdir()) / "mse803_matplotlib"
 MPL_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
@@ -19,15 +16,9 @@ import pandas as pd
 
 
 BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"
-RAW_DIR = DATA_DIR / "raw"
+RAW_DIR = BASE_DIR / "rawdata"
 OUTPUT_DIR = BASE_DIR / "outputs"
 
-DATASET_URL = (
-    "https://archive.ics.uci.edu/static/public/501/"
-    "beijing+multi+site+air+quality+data.zip"
-)
-ZIP_FILE = RAW_DIR / "beijing_multi_site_air_quality_data.zip"
 REPORT_TEMPLATE_FILE = BASE_DIR / "report_template.md"
 REPORT_FILE = BASE_DIR / "analysis_report.md"
 
@@ -63,95 +54,25 @@ def ensure_directories():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def extract_zip_if_needed():
-    # UCI provides an outer zip that contains another zip with the actual
-    # station-level CSV files. Loop through local zip files until the CSVs exist.
-    extracted = set()
-    while not list(RAW_DIR.rglob("PRSA_Data_*.csv")):
-        zip_files = sorted(
-            file_path for file_path in RAW_DIR.rglob("*.zip") if file_path not in extracted
-        )
-        if not zip_files:
-            return
-
-        zip_file = zip_files[0]
-        with ZipFile(zip_file) as archive:
-            archive.extractall(RAW_DIR)
-        extracted.add(zip_file)
-
-
-def download_zip_if_needed():
-    """Download the UCI zip when code import is unavailable and no local data exists."""
-    csv_files = list(RAW_DIR.rglob("PRSA_Data_*.csv"))
-    zip_files = list(RAW_DIR.glob("*.zip"))
-    if csv_files or zip_files:
-        return
-
-    print("Attempting direct download from the UCI dataset file URL...")
-    try:
-        urlretrieve(DATASET_URL, ZIP_FILE)
-    except URLError as error:
-        print(f"Could not download the UCI zip file directly: {error}")
-
-
-def load_dataset_from_ucimlrepo():
-    """Load the dataset using the same UCI package style used in Week 1."""
-    try:
-        from ucimlrepo import fetch_ucirepo
-    except ImportError:
-        return None
-
-    try:
-        dataset = fetch_ucirepo(id=501)
-    except Exception as error:
-        print(f"Could not fetch dataset with ucimlrepo: {error}")
-        return None
-
-    if getattr(dataset.data, "original", None) is not None:
-        return dataset.data.original.copy()
-
-    features = getattr(dataset.data, "features", None)
-    targets = getattr(dataset.data, "targets", None)
-    if features is None:
-        return None
-    if targets is not None:
-        return features.join(targets)
-    return features.copy()
-
-
 def find_air_quality_files():
     csv_files = sorted(RAW_DIR.rglob("PRSA_Data_*.csv"))
     if not csv_files:
         raise SystemExit(
-            "Could not load the dataset with ucimlrepo, and no PRSA_Data_*.csv "
-            "files were found locally. Install ucimlrepo with internet access, "
-            f"or place the UCI zip/extracted CSV files in {RAW_DIR} and run the "
-            "script again."
+            "No PRSA_Data_*.csv files were found. Download and extract the UCI "
+            f"Beijing air-quality dataset, place the extracted CSV files in {RAW_DIR}, "
+            "and run the script again."
         )
     return csv_files
 
 
-def load_dataset_from_csv_files(csv_files):
+def load_raw_dataset():
+    # The raw UCI zip is downloaded and extracted manually before running this
+    # script. This script reads the extracted station-level CSV files directly.
+    csv_files = find_air_quality_files()
     frames = []
     for file_path in csv_files:
         frames.append(pd.read_csv(file_path))
     return pd.concat(frames, ignore_index=True)
-
-
-def load_raw_dataset():
-    # Preferred approach: use code to reference UCI directly, matching the
-    # Week 1 style with ucimlrepo.fetch_ucirepo(). UCI currently lists this
-    # dataset but may not expose it through the ucimlrepo Python import API.
-    df = load_dataset_from_ucimlrepo()
-    if df is not None:
-        return df
-
-    # Fallback 1: download the official zip URL directly.
-    # Fallback 2: use a manually downloaded UCI zip file or extracted CSVs.
-    download_zip_if_needed()
-    extract_zip_if_needed()
-    csv_files = find_air_quality_files()
-    return load_dataset_from_csv_files(csv_files)
 
 
 def prepare_dataset(df):
