@@ -26,6 +26,7 @@ MATPLOTLIB_TOP3_FILE = OUTPUT_DIR / "matplotlib_top3_happiness.png"
 MATPLOTLIB_LOWEST_FREEDOM_FILE = OUTPUT_DIR / "matplotlib_lowest_country_freedom.png"
 MATPLOTLIB_TOP3_PROFILE_FILE = OUTPUT_DIR / "matplotlib_top3_indicator_profile.png"
 MATPLOTLIB_CORRELATION_FILE = OUTPUT_DIR / "matplotlib_happiness_correlations.png"
+MATPLOTLIB_FREEDOM_SCATTER_FILE = OUTPUT_DIR / "matplotlib_freedom_happiness_scatter.png"
 PLOTLY_TOP3_FILE = OUTPUT_DIR / "plotly_top3_happiness.html"
 PLOTLY_LOWEST_FREEDOM_FILE = OUTPUT_DIR / "plotly_lowest_country_freedom.html"
 PLOTLY_RELATIONSHIP_FILE = OUTPUT_DIR / "plotly_happiness_freedom_relationship.html"
@@ -242,6 +243,42 @@ def create_matplotlib_correlation_chart(correlations):
     plt.close()
 
 
+def create_matplotlib_freedom_scatter(cleaned, lowest):
+    plt.figure(figsize=(8, 5.5))
+    plt.scatter(
+        cleaned["Freedom_to_Make_Choices"],
+        cleaned["Happiness_Score"],
+        color="#1f77b4",
+        alpha=0.75,
+        s=70,
+    )
+
+    plt.scatter(
+        lowest["Freedom_to_Make_Choices"],
+        lowest["Happiness_Score"],
+        color="#d62728",
+        s=130,
+        edgecolor="black",
+        label=f"Lowest happiness: {lowest['Country']}",
+    )
+    plt.text(
+        lowest["Freedom_to_Make_Choices"] + 0.015,
+        lowest["Happiness_Score"],
+        lowest["Country"],
+        va="center",
+        fontsize=9,
+    )
+
+    plt.title("Freedom to Make Choices vs Happiness Score")
+    plt.xlabel("Freedom to Make Choices")
+    plt.ylabel("Happiness Score")
+    plt.grid(True, alpha=0.25)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(MATPLOTLIB_FREEDOM_SCATTER_FILE, dpi=160)
+    plt.close()
+
+
 def create_plotly_top3_chart(top3):
     fig = px.bar(
         top3,
@@ -334,6 +371,7 @@ def create_visualisations(cleaned, top3, lowest, correlations):
     create_matplotlib_lowest_freedom_chart(lowest_comparison)
     create_matplotlib_top3_profile_chart(cleaned, top3)
     create_matplotlib_correlation_chart(correlations)
+    create_matplotlib_freedom_scatter(cleaned, lowest)
     create_plotly_top3_chart(top3)
     create_plotly_lowest_freedom_chart(lowest_comparison)
     create_plotly_relationship_chart(cleaned)

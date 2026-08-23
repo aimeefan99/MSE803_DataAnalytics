@@ -110,6 +110,12 @@ outputs/plotly_happiness_freedom_relationship.html
 
 This chart places `Freedom_to_Make_Choices` on the x-axis and `Happiness_Score` on the y-axis. Marker size represents `GDP_per_Capita`, colour represents `Social_Support`, and hover text shows the remaining indicators. This makes the dashboard use the wider dataset instead of relying only on the Happiness and Freedom columns.
 
+### Matplotlib Scatter Plot: Freedom vs Happiness
+
+The static scatter plot below focuses specifically on the relationship between `Freedom_to_Make_Choices` and `Happiness_Score`. A scatter plot is appropriate here because both variables are numeric, and the goal is to inspect whether countries with higher Freedom scores also tend to have higher Happiness scores.
+
+![Matplotlib freedom and happiness scatter plot](outputs/matplotlib_freedom_happiness_scatter.png)
+
 ## Correlation Analysis
 
 The table below shows the correlation between `Happiness_Score` and each supporting indicator.
@@ -139,7 +145,7 @@ These correlations describe relationships in this dataset only. They do not prov
 
 ## Chart Choice
 
-A bar chart is the most appropriate chart type for comparing the happiness scores of the three happiest countries because the countries are categorical variables and the happiness score is numeric. A line chart is not suitable because this dataset does not contain a time variable. A grouped bar chart is also appropriate for the lowest-happiness country task because it compares South Africa's Freedom score with its normalised Happiness score and with other countries. The scatter chart is useful for exploring relationships between Happiness and other supporting indicators, while the correlation bar chart summarises the strength and direction of those associations.
+A bar chart is the most appropriate chart type for comparing the happiness scores of the three happiest countries because the countries are categorical variables and the happiness score is numeric. A line chart is not suitable because this dataset does not contain a time variable. A grouped bar chart is also appropriate for the lowest-happiness country task because it compares South Africa's Freedom score with its normalised Happiness score and with other countries. Scatter plots are useful for exploring relationships between two numeric variables, such as Freedom and Happiness. The correlation bar chart summarises the strength and direction of associations across all supporting indicators.
 
 ## Findings
 
