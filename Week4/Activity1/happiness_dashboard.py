@@ -378,13 +378,24 @@ def build_report(cleaned, missing_summary, duplicate_count, top3, lowest, freedo
     supporting_summary = supporting_summary.reset_index().rename(columns={"index": "Indicator"})
     strongest_positive = correlations.iloc[0]
     strongest_negative = correlations.iloc[-1]
+    missing_total = int(missing_summary["Missing Values"].sum())
+    if missing_total == 0:
+        missing_value_result = (
+            "No missing values were found in the provided dataset, so no "
+            "missing-value imputation was required."
+        )
+    else:
+        missing_value_result = (
+            f"{missing_total} missing values were found during data preparation. "
+            "Rows missing `Country` or `Happiness_Score` were removed before visualisation."
+        )
 
     template = Template(REPORT_TEMPLATE_FILE.read_text(encoding="utf-8"))
     return template.substitute(
         record_count=len(cleaned),
         column_count=len(cleaned.columns),
         duplicate_count=duplicate_count,
-        missing_table=markdown_table(missing_summary, ["Missing Values"]),
+        missing_value_result=missing_value_result,
         top3_table=markdown_table(top3_table, ["Happiness_Score", "Freedom_to_Make_Choices"]),
         lowest_table=markdown_table(lowest_table, ["Happiness_Score", "Freedom_to_Make_Choices"]),
         lowest_comparison_table=markdown_table(

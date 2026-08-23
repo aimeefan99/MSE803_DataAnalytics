@@ -19,18 +19,9 @@ Cleaning and preparation steps:
 
 Duplicate rows found: **0**
 
-Missing values summary:
+### Data Quality Check: Missing Values
 
-| Column | Missing Values |
-| --- | --- |
-| Country | 0.00 |
-| Happiness_Score | 0.00 |
-| GDP_per_Capita | 0.00 |
-| Social_Support | 0.00 |
-| Healthy_Life_Expectancy | 0.00 |
-| Freedom_to_Make_Choices | 0.00 |
-| Generosity | 0.00 |
-| Perceptions_of_Corruption | 0.00 |
+No missing values were found in the provided dataset, so no missing-value imputation was required.
 
 ## Three Happiest Countries
 

@@ -19,9 +19,9 @@ Cleaning and preparation steps:
 
 Duplicate rows found: **$duplicate_count**
 
-Missing values summary:
+### Data Quality Check: Missing Values
 
-$missing_table
+$missing_value_result
 
 ## Three Happiest Countries
 
