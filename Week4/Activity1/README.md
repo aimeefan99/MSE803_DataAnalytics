@@ -33,6 +33,7 @@ python happiness_dashboard.py
 - `outputs/matplotlib_top3_indicator_profile.png`
 - `outputs/matplotlib_happiness_correlations.png`
 - `outputs/matplotlib_freedom_happiness_scatter.png`
+- `outputs/happiness_correlation_matrix.csv`
 - `outputs/plotly_top3_happiness.html`
 - `outputs/plotly_lowest_country_freedom.html`
 - `outputs/plotly_happiness_freedom_relationship.html`

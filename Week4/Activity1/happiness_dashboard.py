@@ -13,6 +13,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -49,6 +50,15 @@ SUPPORTING_COLUMNS = [
     "Generosity",
     "Perceptions_of_Corruption",
 ]
+DISPLAY_LABELS = {
+    "Happiness_Score": "Happiness",
+    "GDP_per_Capita": "GDP",
+    "Social_Support": "Social Support",
+    "Healthy_Life_Expectancy": "Life Expectancy",
+    "Freedom_to_Make_Choices": "Freedom",
+    "Generosity": "Generosity",
+    "Perceptions_of_Corruption": "Corruption",
+}
 
 
 def ensure_directories():
@@ -99,6 +109,12 @@ def happiness_correlations(cleaned):
     )
     correlations.columns = ["Indicator", "Correlation_with_Happiness"]
     return correlations
+
+
+def happiness_correlation_matrix(cleaned):
+    # A correlation matrix supports the heatmap view by comparing every numeric
+    # indicator with every other numeric indicator, including Happiness score.
+    return cleaned[NUMERIC_COLUMNS].corr()
 
 
 def build_lowest_comparison(cleaned, top3, lowest):
@@ -215,31 +231,40 @@ def create_matplotlib_top3_profile_chart(cleaned, top3):
     plt.close()
 
 
-def create_matplotlib_correlation_chart(correlations):
-    plt.figure(figsize=(9, 5.5))
-    colors = [
-        "#2ca02c" if value >= 0 else "#d62728"
-        for value in correlations["Correlation_with_Happiness"]
-    ]
-    bars = plt.barh(
-        correlations["Indicator"],
-        correlations["Correlation_with_Happiness"],
-        color=colors,
-    )
-    plt.title("Correlation with Happiness Score")
-    plt.xlabel("Correlation coefficient")
-    plt.xlim(-1, 1)
-    plt.axvline(0, color="black", linewidth=0.8)
-    plt.grid(axis="x", alpha=0.25)
+def create_matplotlib_correlation_heatmap(correlation_matrix):
+    # A heatmap is more suitable than a bar chart when the goal is to review
+    # relationships across many numeric variables at the same time.
+    labels = list(correlation_matrix.columns)
+    display_labels = [DISPLAY_LABELS[label] for label in labels]
 
-    for bar in bars:
-        width = bar.get_width()
-        offset = 0.03 if width >= 0 else -0.03
-        ha = "left" if width >= 0 else "right"
-        plt.text(width + offset, bar.get_y() + bar.get_height() / 2, f"{width:.2f}", va="center", ha=ha)
+    fig, ax = plt.subplots(figsize=(10, 8))
+    heatmap = ax.imshow(correlation_matrix, cmap="RdYlGn", vmin=-1, vmax=1)
 
-    plt.tight_layout()
-    plt.savefig(MATPLOTLIB_CORRELATION_FILE, dpi=160)
+    ax.set_title("Correlation Heatmap: Happiness and Supporting Indicators")
+    ax.set_xticks(range(len(labels)))
+    ax.set_yticks(range(len(labels)))
+    ax.set_xticklabels(display_labels, rotation=35, ha="right")
+    ax.set_yticklabels(display_labels)
+
+    for row_index in range(len(labels)):
+        for column_index in range(len(labels)):
+            value = correlation_matrix.iloc[row_index, column_index]
+            text_color = "white" if abs(value) >= 0.55 else "black"
+            ax.text(
+                column_index,
+                row_index,
+                f"{value:.2f}",
+                ha="center",
+                va="center",
+                color=text_color,
+                fontsize=8,
+            )
+
+    colorbar = fig.colorbar(heatmap, ax=ax)
+    colorbar.set_label("Correlation coefficient")
+
+    fig.tight_layout()
+    fig.savefig(MATPLOTLIB_CORRELATION_FILE, dpi=160)
     plt.close()
 
 
@@ -348,34 +373,52 @@ def create_plotly_relationship_chart(cleaned):
     fig.write_html(PLOTLY_RELATIONSHIP_FILE, include_plotlyjs="cdn")
 
 
-def create_plotly_correlation_chart(correlations):
-    fig = px.bar(
-        correlations,
-        x="Correlation_with_Happiness",
-        y="Indicator",
-        orientation="h",
-        color="Correlation_with_Happiness",
-        color_continuous_scale="RdYlGn",
-        range_color=[-1, 1],
-        text=correlations["Correlation_with_Happiness"].round(2),
-        title="Interactive View: Correlation with Happiness Score",
-        labels={"Correlation_with_Happiness": "Correlation with Happiness Score"},
+def create_plotly_correlation_heatmap(correlation_matrix):
+    labels = list(correlation_matrix.columns)
+    display_labels = [DISPLAY_LABELS[label] for label in labels]
+    values = correlation_matrix.round(2).values
+
+    fig = go.Figure(
+        data=go.Heatmap(
+            z=values,
+            x=display_labels,
+            y=display_labels,
+            colorscale="RdYlGn",
+            zmin=-1,
+            zmax=1,
+            text=values,
+            customdata=[
+                [[row_label, column_label] for column_label in labels]
+                for row_label in labels
+            ],
+            texttemplate="%{text:.2f}",
+            colorbar={"title": "Correlation"},
+            hovertemplate=(
+                "%{customdata[0]} vs %{customdata[1]}"
+                "<br>Correlation: %{z:.2f}<extra></extra>"
+            ),
+        )
     )
-    fig.update_layout(xaxis_range=[-1, 1], yaxis={"categoryorder": "total ascending"})
+    fig.update_layout(
+        title="Interactive View: Correlation Heatmap",
+        xaxis_title="Numeric Indicator",
+        yaxis_title="Numeric Indicator",
+        xaxis={"tickangle": -45},
+    )
     fig.write_html(PLOTLY_CORRELATION_FILE, include_plotlyjs="cdn")
 
 
-def create_visualisations(cleaned, top3, lowest, correlations):
+def create_visualisations(cleaned, top3, lowest, correlation_matrix):
     lowest_comparison = build_lowest_comparison(cleaned, top3, lowest)
     create_matplotlib_top3_chart(top3)
     create_matplotlib_lowest_freedom_chart(lowest_comparison)
     create_matplotlib_top3_profile_chart(cleaned, top3)
-    create_matplotlib_correlation_chart(correlations)
+    create_matplotlib_correlation_heatmap(correlation_matrix)
     create_matplotlib_freedom_scatter(cleaned, lowest)
     create_plotly_top3_chart(top3)
     create_plotly_lowest_freedom_chart(lowest_comparison)
     create_plotly_relationship_chart(cleaned)
-    create_plotly_correlation_chart(correlations)
+    create_plotly_correlation_heatmap(correlation_matrix)
 
 
 def markdown_table(df, numeric_columns=None):
@@ -460,10 +503,11 @@ def build_report(cleaned, missing_summary, duplicate_count, top3, lowest, freedo
     )
 
 
-def save_outputs(cleaned, missing_summary, duplicate_count, top3, lowest, freedom_average, correlations):
+def save_outputs(cleaned, missing_summary, duplicate_count, top3, lowest, freedom_average, correlations, correlation_matrix):
     cleaned.to_csv(CLEANED_DATA_FILE, index=False)
     correlations.to_csv(OUTPUT_DIR / "happiness_correlations.csv", index=False)
-    create_visualisations(cleaned, top3, lowest, correlations)
+    correlation_matrix.to_csv(OUTPUT_DIR / "happiness_correlation_matrix.csv")
+    create_visualisations(cleaned, top3, lowest, correlation_matrix)
 
     report = build_report(cleaned, missing_summary, duplicate_count, top3, lowest, freedom_average, correlations)
     REPORT_FILE.write_text(report, encoding="utf-8")
@@ -475,7 +519,8 @@ def main():
     cleaned, missing_summary, duplicate_count = load_and_clean_data()
     top3, lowest, freedom_average = get_dashboard_data(cleaned)
     correlations = happiness_correlations(cleaned)
-    save_outputs(cleaned, missing_summary, duplicate_count, top3, lowest, freedom_average, correlations)
+    correlation_matrix = happiness_correlation_matrix(cleaned)
+    save_outputs(cleaned, missing_summary, duplicate_count, top3, lowest, freedom_average, correlations, correlation_matrix)
 
 
 if __name__ == "__main__":

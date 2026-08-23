@@ -107,9 +107,11 @@ The strongest positive association with Happiness score is **$strongest_positive
 
 The weakest or most negative association is **$strongest_negative_indicator** with a correlation of **$strongest_negative_correlation**.
 
-![Matplotlib happiness correlation chart](outputs/matplotlib_happiness_correlations.png)
+The heatmap below shows the full correlation matrix for `Happiness_Score` and all supporting indicators. It is useful because it shows not only each indicator's relationship with happiness, but also the relationships among the indicators themselves.
 
-Open the interactive Plotly correlation chart:
+![Matplotlib happiness correlation heatmap](outputs/matplotlib_happiness_correlations.png)
+
+Open the interactive Plotly correlation heatmap:
 
 ```text
 outputs/plotly_happiness_correlations.html
@@ -119,7 +121,7 @@ These correlations describe relationships in this dataset only. They do not prov
 
 ## Chart Choice
 
-A bar chart is the most appropriate chart type for comparing the happiness scores of the three happiest countries because the countries are categorical variables and the happiness score is numeric. A line chart is not suitable because this dataset does not contain a time variable. A grouped bar chart is also appropriate for the lowest-happiness country task because it compares South Africa's Freedom score with its normalised Happiness score and with other countries. Scatter plots are useful for exploring relationships between two numeric variables, such as Freedom and Happiness. The correlation bar chart summarises the strength and direction of associations across all supporting indicators.
+A bar chart is the most appropriate chart type for comparing the happiness scores of the three happiest countries because the countries are categorical variables and the happiness score is numeric. A line chart is not suitable because this dataset does not contain a time variable. A grouped bar chart is also appropriate for the lowest-happiness country task because it compares South Africa's Freedom score with its normalised Happiness score and with other countries. Scatter plots are useful for exploring relationships between two numeric variables, such as Freedom and Happiness. A correlation heatmap is more appropriate than a correlation bar chart when comparing several numeric variables because it shows the strength and direction of all pairwise relationships in one view.
 
 ## Findings
 
