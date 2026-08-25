@@ -1,8 +1,23 @@
+"""
+Week 4 Activity 1.2
+
+This script performs the data work for the happiness dashboard:
+1. Load and clean the provided World Happiness dataset.
+2. Calculate dashboard summaries such as the top three happiest countries.
+3. Detect potential outliers with the IQR method.
+4. Generate Matplotlib and Plotly visualisations.
+5. Save reusable CSV outputs for the written reports.
+
+The written Markdown reports are maintained separately. This script does not
+generate or overwrite report files.
+"""
+
 from pathlib import Path
-from string import Template
 import os
 import tempfile
 
+# Matplotlib may try to write font cache files. Setting MPLCONFIGDIR to a temp
+# folder keeps the script portable in restricted or course-lab environments.
 MPL_CONFIG_DIR = Path(tempfile.gettempdir()) / "mse803_matplotlib"
 MPL_CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 os.environ["MPLCONFIGDIR"] = str(MPL_CONFIG_DIR)
@@ -14,25 +29,28 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_FILE = BASE_DIR / "world_happiness_dataset.csv"
 OUTPUT_DIR = BASE_DIR / "outputs"
-REPORT_TEMPLATE_FILE = BASE_DIR / "report_template.md"
-REPORT_FILE = BASE_DIR / "dashboard_report.md"
 CLEANED_DATA_FILE = BASE_DIR / "cleaned_world_happiness_dataset.csv"
 
+# Static image outputs used in the Markdown reports.
 MATPLOTLIB_TOP3_FILE = OUTPUT_DIR / "matplotlib_top3_happiness.png"
 MATPLOTLIB_LOWEST_FREEDOM_FILE = OUTPUT_DIR / "matplotlib_lowest_country_freedom.png"
 MATPLOTLIB_TOP3_PROFILE_FILE = OUTPUT_DIR / "matplotlib_top3_indicator_profile.png"
 MATPLOTLIB_CORRELATION_FILE = OUTPUT_DIR / "matplotlib_happiness_correlations.png"
 MATPLOTLIB_FREEDOM_SCATTER_FILE = OUTPUT_DIR / "matplotlib_freedom_happiness_scatter.png"
+MATPLOTLIB_OUTLIER_BOXPLOT_FILE = OUTPUT_DIR / "matplotlib_outlier_boxplots.png"
+
+# Interactive HTML outputs used to demonstrate Plotly visualisation skills.
 PLOTLY_TOP3_FILE = OUTPUT_DIR / "plotly_top3_happiness.html"
 PLOTLY_LOWEST_FREEDOM_FILE = OUTPUT_DIR / "plotly_lowest_country_freedom.html"
-PLOTLY_RELATIONSHIP_FILE = OUTPUT_DIR / "plotly_happiness_freedom_relationship.html"
-PLOTLY_CORRELATION_FILE = OUTPUT_DIR / "plotly_happiness_correlations.html"
+PLOTLY_OUTLIER_BOXPLOT_FILE = OUTPUT_DIR / "plotly_outlier_boxplots.html"
 
+# Columns used for cleaning, ranking, correlation, and outlier detection.
 NUMERIC_COLUMNS = [
     "Happiness_Score",
     "GDP_per_Capita",
@@ -62,10 +80,12 @@ DISPLAY_LABELS = {
 
 
 def ensure_directories():
+    """Create the outputs directory before writing charts or CSV files."""
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def load_and_clean_data():
+    """Load the source CSV and apply basic data quality preparation."""
     df = pd.read_csv(DATA_FILE)
 
     # Keep column and country names consistent before analysis.
@@ -91,10 +111,10 @@ def load_and_clean_data():
 
 
 def get_dashboard_data(cleaned):
+    """Calculate the main values required by the dashboard task."""
     top3 = cleaned.nlargest(3, "Happiness_Score").copy()
     lowest = cleaned.nsmallest(1, "Happiness_Score").iloc[0]
-    freedom_average = cleaned["Freedom_to_Make_Choices"].mean()
-    return top3, lowest, freedom_average
+    return top3, lowest
 
 
 def happiness_correlations(cleaned):
@@ -117,7 +137,56 @@ def happiness_correlation_matrix(cleaned):
     return cleaned[NUMERIC_COLUMNS].corr()
 
 
+def detect_outliers_iqr(cleaned):
+    # The IQR rule follows the sample notebook: values below Q1 - 1.5 * IQR or
+    # above Q3 + 1.5 * IQR are flagged as potential outliers.
+    summary_rows = []
+    record_rows = []
+
+    for column in NUMERIC_COLUMNS:
+        q1 = cleaned[column].quantile(0.25)
+        q3 = cleaned[column].quantile(0.75)
+        iqr = q3 - q1
+        lower_bound = q1 - 1.5 * iqr
+        upper_bound = q3 + 1.5 * iqr
+        outlier_mask = (cleaned[column] < lower_bound) | (cleaned[column] > upper_bound)
+        outliers = cleaned.loc[outlier_mask, ["Country", column]]
+
+        summary_rows.append(
+            {
+                "Indicator": column,
+                "Q1": q1,
+                "Q3": q3,
+                "IQR": iqr,
+                "Lower_Bound": lower_bound,
+                "Upper_Bound": upper_bound,
+                "Outlier_Count": int(outlier_mask.sum()),
+                "Decision": "Review flagged records" if outlier_mask.any() else "Keep all records",
+            }
+        )
+
+        for _, row in outliers.iterrows():
+            record_rows.append(
+                {
+                    "Country": row["Country"],
+                    "Indicator": column,
+                    "Value": row[column],
+                    "Lower_Bound": lower_bound,
+                    "Upper_Bound": upper_bound,
+                    "Decision": "Keep unless confirmed as data entry error",
+                }
+            )
+
+    summary = pd.DataFrame(summary_rows)
+    records = pd.DataFrame(
+        record_rows,
+        columns=["Country", "Indicator", "Value", "Lower_Bound", "Upper_Bound", "Decision"],
+    )
+    return summary, records
+
+
 def build_lowest_comparison(cleaned, top3, lowest):
+    """Prepare a small comparison table for the lowest-happiness country."""
     comparison = pd.concat([top3, pd.DataFrame([lowest])], ignore_index=True)
     comparison = comparison.drop_duplicates(subset=["Country"])
 
@@ -200,6 +269,7 @@ def create_matplotlib_lowest_freedom_chart(comparison):
 
 
 def normalise_columns(df, columns):
+    """Scale selected columns to 0-1 for profile comparison charts."""
     normalised = df[["Country"] + columns].copy()
     for column in columns:
         minimum = df[column].min()
@@ -269,6 +339,8 @@ def create_matplotlib_correlation_heatmap(correlation_matrix):
 
 
 def create_matplotlib_freedom_scatter(cleaned, lowest):
+    # A scatter plot is used because both variables are numeric. The lowest
+    # happiness country is highlighted so it can be discussed in context.
     plt.figure(figsize=(8, 5.5))
     plt.scatter(
         cleaned["Freedom_to_Make_Choices"],
@@ -304,7 +376,87 @@ def create_matplotlib_freedom_scatter(cleaned, lowest):
     plt.close()
 
 
+def create_matplotlib_outlier_boxplots(cleaned, outlier_summary):
+    # Each subplot uses the original column scale and shows the actual IQR
+    # lower/upper bounds. Points outside the red dashed lines are outliers.
+    fig, axes = plt.subplots(3, 3, figsize=(14, 10))
+    axes = axes.flatten()
+
+    for index, column in enumerate(NUMERIC_COLUMNS):
+        ax = axes[index]
+        values = cleaned[column].dropna()
+        bounds = outlier_summary.loc[outlier_summary["Indicator"] == column].iloc[0]
+        q1 = bounds["Q1"]
+        q3 = bounds["Q3"]
+        lower_bound = bounds["Lower_Bound"]
+        upper_bound = bounds["Upper_Bound"]
+        outlier_count = int(bounds["Outlier_Count"])
+        median = values.median()
+
+        ax.boxplot(
+            values,
+            showmeans=True,
+            patch_artist=True,
+            boxprops={"facecolor": "#dbeafe", "color": "#1f2937"},
+            medianprops={"color": "#f97316", "linewidth": 1.5},
+            whiskerprops={"color": "#1f2937"},
+            capprops={"color": "#1f2937"},
+            meanprops={"marker": "^", "markerfacecolor": "#16a34a", "markeredgecolor": "#16a34a"},
+        )
+
+        offsets = pd.Series(range(len(values))).map(lambda value: (value % 5 - 2) * 0.035)
+        ax.scatter(
+            1 + offsets,
+            values,
+            color="#2563eb",
+            alpha=0.65,
+            s=28,
+            zorder=3,
+        )
+        ax.axhline(lower_bound, color="#dc2626", linestyle="--", linewidth=1, label="IQR bounds")
+        ax.axhline(upper_bound, color="#dc2626", linestyle="--", linewidth=1)
+
+        y_min = min(values.min(), lower_bound)
+        y_max = max(values.max(), upper_bound)
+        padding = (y_max - y_min) * 0.08 if y_max > y_min else 1
+        ax.set_ylim(y_min - padding, y_max + padding)
+        tick_values = sorted({round(value, 2) for value in [lower_bound, q1, median, q3, upper_bound]})
+        ax.set_yticks(tick_values)
+        ax.set_yticklabels([f"{value:.2f}" for value in tick_values], fontsize=8)
+        ax.text(
+            1.18,
+            upper_bound,
+            f"Upper {upper_bound:.2f}",
+            color="#dc2626",
+            fontsize=8,
+            va="bottom",
+        )
+        ax.text(
+            1.18,
+            lower_bound,
+            f"Lower {lower_bound:.2f}",
+            color="#dc2626",
+            fontsize=8,
+            va="top",
+        )
+        ax.set_title(f"{DISPLAY_LABELS[column]} (outliers: {outlier_count})", fontsize=10)
+        ax.set_xticks([])
+        ax.set_ylabel("Original value")
+        ax.grid(axis="y", alpha=0.25)
+
+    for ax in axes[len(NUMERIC_COLUMNS):]:
+        ax.axis("off")
+
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="lower center", ncol=1)
+    fig.suptitle("Outlier Check with IQR Bounds", fontsize=14)
+    fig.tight_layout(rect=[0, 0.04, 1, 0.96])
+    fig.savefig(MATPLOTLIB_OUTLIER_BOXPLOT_FILE, dpi=160)
+    plt.close()
+
+
 def create_plotly_top3_chart(top3):
+    # Plotly versions provide interactive HTML views for exploration.
     fig = px.bar(
         top3,
         x="Country",
@@ -319,6 +471,7 @@ def create_plotly_top3_chart(top3):
 
 
 def create_plotly_lowest_freedom_chart(comparison):
+    # Convert the comparison table into long format for grouped bars.
     long_df = comparison.melt(
         id_vars=["Country"],
         value_vars=["Happiness_Normalised", "Freedom_Normalised"],
@@ -346,181 +499,133 @@ def create_plotly_lowest_freedom_chart(comparison):
     fig.write_html(PLOTLY_LOWEST_FREEDOM_FILE, include_plotlyjs="cdn")
 
 
-def create_plotly_relationship_chart(cleaned):
-    fig = px.scatter(
-        cleaned,
-        x="Freedom_to_Make_Choices",
-        y="Happiness_Score",
-        size="GDP_per_Capita",
-        color="Social_Support",
-        hover_name="Country",
-        hover_data={
-            "GDP_per_Capita": ":.2f",
-            "Social_Support": ":.2f",
-            "Healthy_Life_Expectancy": ":.1f",
-            "Generosity": ":.2f",
-            "Perceptions_of_Corruption": ":.2f",
-        },
-        title="Interactive View: Happiness Score and Supporting Indicators",
-        labels={
-            "Freedom_to_Make_Choices": "Freedom to Make Choices",
-            "Happiness_Score": "Happiness Score",
-            "GDP_per_Capita": "GDP per Capita",
-            "Social_Support": "Social Support",
-        },
+def create_plotly_outlier_boxplots(cleaned, outlier_summary):
+    # The interactive version mirrors the Matplotlib outlier chart, with hover
+    # labels so the country behind each point can be identified.
+    fig = make_subplots(
+        rows=3,
+        cols=3,
+        subplot_titles=[DISPLAY_LABELS[column] for column in NUMERIC_COLUMNS],
     )
-    fig.update_layout(coloraxis_colorbar_title="Social Support")
-    fig.write_html(PLOTLY_RELATIONSHIP_FILE, include_plotlyjs="cdn")
 
+    for index, column in enumerate(NUMERIC_COLUMNS):
+        row = index // 3 + 1
+        col = index % 3 + 1
+        values = cleaned[column]
+        bounds = outlier_summary.loc[outlier_summary["Indicator"] == column].iloc[0]
 
-def create_plotly_correlation_heatmap(correlation_matrix):
-    labels = list(correlation_matrix.columns)
-    display_labels = [DISPLAY_LABELS[label] for label in labels]
-    values = correlation_matrix.round(2).values
-
-    fig = go.Figure(
-        data=go.Heatmap(
-            z=values,
-            x=display_labels,
-            y=display_labels,
-            colorscale="RdYlGn",
-            zmin=-1,
-            zmax=1,
-            text=values,
-            customdata=[
-                [[row_label, column_label] for column_label in labels]
-                for row_label in labels
-            ],
-            texttemplate="%{text:.2f}",
-            colorbar={"title": "Correlation"},
-            hovertemplate=(
-                "%{customdata[0]} vs %{customdata[1]}"
-                "<br>Correlation: %{z:.2f}<extra></extra>"
+        fig.add_trace(
+            go.Box(
+                y=values,
+                name=DISPLAY_LABELS[column],
+                boxmean=True,
+                boxpoints="all",
+                jitter=0.35,
+                pointpos=0,
+                text=cleaned["Country"],
+                hovertemplate=(
+                    "Country: %{text}<br>"
+                    "Original value: %{y:.2f}<extra></extra>"
+                ),
+                marker={"color": "#2563eb", "opacity": 0.7},
+                line={"color": "#1f2937"},
+                showlegend=False,
             ),
+            row=row,
+            col=col,
         )
-    )
+        fig.add_hline(
+            y=bounds["Lower_Bound"],
+            line_dash="dash",
+            line_color="#dc2626",
+            annotation_text=f"Lower {bounds['Lower_Bound']:.2f}",
+            annotation_position="bottom right",
+            row=row,
+            col=col,
+        )
+        fig.add_hline(
+            y=bounds["Upper_Bound"],
+            line_dash="dash",
+            line_color="#dc2626",
+            annotation_text=f"Upper {bounds['Upper_Bound']:.2f}",
+            annotation_position="top right",
+            row=row,
+            col=col,
+        )
+        tick_values = sorted(
+            {
+                round(value, 2)
+                for value in [
+                    bounds["Lower_Bound"],
+                    bounds["Q1"],
+                    values.median(),
+                    bounds["Q3"],
+                    bounds["Upper_Bound"],
+                ]
+            }
+        )
+        fig.update_yaxes(
+            title_text="Original value",
+            tickmode="array",
+            tickvals=tick_values,
+            ticktext=[f"{value:.2f}" for value in tick_values],
+            row=row,
+            col=col,
+        )
+
     fig.update_layout(
-        title="Interactive View: Correlation Heatmap",
-        xaxis_title="Numeric Indicator",
-        yaxis_title="Numeric Indicator",
-        xaxis={"tickangle": -45},
+        title="Interactive View: Outlier Check with IQR Bounds",
+        height=900,
     )
-    fig.write_html(PLOTLY_CORRELATION_FILE, include_plotlyjs="cdn")
+    fig.write_html(PLOTLY_OUTLIER_BOXPLOT_FILE, include_plotlyjs="cdn")
 
 
-def create_visualisations(cleaned, top3, lowest, correlation_matrix):
+def create_visualisations(cleaned, top3, lowest, correlation_matrix, outlier_summary):
+    """Generate all static and interactive visualisations."""
     lowest_comparison = build_lowest_comparison(cleaned, top3, lowest)
     create_matplotlib_top3_chart(top3)
     create_matplotlib_lowest_freedom_chart(lowest_comparison)
     create_matplotlib_top3_profile_chart(cleaned, top3)
     create_matplotlib_correlation_heatmap(correlation_matrix)
     create_matplotlib_freedom_scatter(cleaned, lowest)
+    create_matplotlib_outlier_boxplots(cleaned, outlier_summary)
     create_plotly_top3_chart(top3)
     create_plotly_lowest_freedom_chart(lowest_comparison)
-    create_plotly_relationship_chart(cleaned)
-    create_plotly_correlation_heatmap(correlation_matrix)
+    create_plotly_outlier_boxplots(cleaned, outlier_summary)
 
 
-def markdown_table(df, numeric_columns=None):
-    numeric_columns = set(numeric_columns or [])
-    table = df.copy()
-
-    for column in table.columns:
-        if column in numeric_columns:
-            table[column] = table[column].map(lambda value: f"{value:.2f}")
-        else:
-            table[column] = table[column].astype(str)
-
-    lines = [
-        "| " + " | ".join(table.columns) + " |",
-        "| " + " | ".join(["---"] * len(table.columns)) + " |",
-    ]
-    for _, row in table.iterrows():
-        lines.append("| " + " | ".join(row.astype(str)) + " |")
-    return "\n".join(lines)
-
-
-def build_report(cleaned, missing_summary, duplicate_count, top3, lowest, freedom_average, correlations):
-    top3_table = top3[["Country", "Happiness_Score", "Freedom_to_Make_Choices"]]
-    lowest_table = pd.DataFrame([lowest])[
-        ["Country", "Happiness_Score", "Freedom_to_Make_Choices"]
-    ]
-    lowest_comparison = build_lowest_comparison(cleaned, top3, lowest)
-    lowest_comparison_table = lowest_comparison[
-        [
-            "Country",
-            "Happiness_Score",
-            "Freedom_to_Make_Choices",
-            "Happiness_Normalised",
-            "Freedom_Normalised",
-        ]
-    ]
-    supporting_summary = cleaned[SUPPORTING_COLUMNS].agg(["mean", "min", "max"]).T
-    supporting_summary = supporting_summary.reset_index().rename(columns={"index": "Indicator"})
-    strongest_positive = correlations.iloc[0]
-    strongest_negative = correlations.iloc[-1]
-    missing_total = int(missing_summary["Missing Values"].sum())
-    if missing_total == 0:
-        missing_value_result = (
-            "No missing values were found in the provided dataset, so no "
-            "missing-value imputation was required."
-        )
-    else:
-        missing_value_result = (
-            f"{missing_total} missing values were found during data preparation. "
-            "Rows missing `Country` or `Happiness_Score` were removed before visualisation."
-        )
-
-    template = Template(REPORT_TEMPLATE_FILE.read_text(encoding="utf-8"))
-    return template.substitute(
-        record_count=len(cleaned),
-        column_count=len(cleaned.columns),
-        duplicate_count=duplicate_count,
-        missing_value_result=missing_value_result,
-        top3_table=markdown_table(top3_table, ["Happiness_Score", "Freedom_to_Make_Choices"]),
-        lowest_table=markdown_table(lowest_table, ["Happiness_Score", "Freedom_to_Make_Choices"]),
-        lowest_comparison_table=markdown_table(
-            lowest_comparison_table,
-            [
-                "Happiness_Score",
-                "Freedom_to_Make_Choices",
-                "Happiness_Normalised",
-                "Freedom_Normalised",
-            ],
-        ),
-        supporting_summary_table=markdown_table(supporting_summary, ["mean", "min", "max"]),
-        correlation_table=markdown_table(correlations, ["Correlation_with_Happiness"]),
-        strongest_positive_indicator=strongest_positive["Indicator"],
-        strongest_positive_correlation=f"{strongest_positive['Correlation_with_Happiness']:.2f}",
-        strongest_negative_indicator=strongest_negative["Indicator"],
-        strongest_negative_correlation=f"{strongest_negative['Correlation_with_Happiness']:.2f}",
-        lowest_country=lowest["Country"],
-        lowest_happiness=f"{lowest['Happiness_Score']:.2f}",
-        lowest_freedom=f"{lowest['Freedom_to_Make_Choices']:.2f}",
-        freedom_average=f"{freedom_average:.2f}",
-        top_country=top3.iloc[0]["Country"],
-        top_score=f"{top3.iloc[0]['Happiness_Score']:.2f}",
-    )
-
-
-def save_outputs(cleaned, missing_summary, duplicate_count, top3, lowest, freedom_average, correlations, correlation_matrix):
+def save_outputs(
+    cleaned,
+    top3,
+    lowest,
+    correlations,
+    correlation_matrix,
+    outlier_summary,
+):
+    """Save cleaned data, analysis tables, and generated visualisations."""
     cleaned.to_csv(CLEANED_DATA_FILE, index=False)
     correlations.to_csv(OUTPUT_DIR / "happiness_correlations.csv", index=False)
-    correlation_matrix.to_csv(OUTPUT_DIR / "happiness_correlation_matrix.csv")
-    create_visualisations(cleaned, top3, lowest, correlation_matrix)
-
-    report = build_report(cleaned, missing_summary, duplicate_count, top3, lowest, freedom_average, correlations)
-    REPORT_FILE.write_text(report, encoding="utf-8")
-    print(report)
+    outlier_summary.to_csv(OUTPUT_DIR / "outlier_summary.csv", index=False)
+    create_visualisations(cleaned, top3, lowest, correlation_matrix, outlier_summary)
+    print(f"Analysis outputs saved to: {OUTPUT_DIR}")
 
 
 def main():
+    """Run the complete analysis workflow."""
     ensure_directories()
-    cleaned, missing_summary, duplicate_count = load_and_clean_data()
-    top3, lowest, freedom_average = get_dashboard_data(cleaned)
+    cleaned, _, _ = load_and_clean_data()
+    top3, lowest = get_dashboard_data(cleaned)
     correlations = happiness_correlations(cleaned)
     correlation_matrix = happiness_correlation_matrix(cleaned)
-    save_outputs(cleaned, missing_summary, duplicate_count, top3, lowest, freedom_average, correlations, correlation_matrix)
+    outlier_summary, _ = detect_outliers_iqr(cleaned)
+    save_outputs(
+        cleaned,
+        top3,
+        lowest,
+        correlations,
+        correlation_matrix,
+        outlier_summary,
+    )
 
 
 if __name__ == "__main__":

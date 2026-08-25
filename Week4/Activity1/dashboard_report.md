@@ -1,8 +1,8 @@
-# Week 4 - Activity 1: Happiness Dashboard and Data Visualisation
+# Week 4 - Activity 1.2: Happiness Dashboard with Outlier Detection
 
 ## Objective
 
-This activity develops a simple dashboard using the cleaned World Happiness dataset. The dashboard identifies the three happiest countries, compares their happiness scores, and summarises the Freedom score for the country with the lowest happiness score.
+This activity updates the Week 4 Activity 1.1 happiness dashboard by adding outlier detection. The dashboard identifies the three happiest countries, compares their happiness scores, summarises the Freedom score for the country with the lowest happiness score, and checks whether any numeric records should be kept or dropped after outlier review.
 
 Both Matplotlib and Plotly are used to demonstrate static and interactive visualisation skills.
 
@@ -22,6 +22,34 @@ Duplicate rows found: **0**
 ### Data Quality Check: Missing Values
 
 No missing values were found in the provided dataset, so no missing-value imputation was required.
+
+### Data Quality Check: Outliers
+
+Outlier detection was added for Activity 1.2. The dashboard uses the IQR method from the sample exercise to check all numeric columns. The IQR method flags values below `Q1 - 1.5 * IQR` or above `Q3 + 1.5 * IQR`.
+
+The IQR method did not identify any outlier records in the numeric columns. Therefore, all country records were kept and no outlier removal was applied.
+
+| Indicator | Q1 | Q3 | IQR | Lower_Bound | Upper_Bound | Outlier_Count | Decision |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Happiness_Score | 4.24 | 6.26 | 2.02 | 1.20 | 9.29 | 0 | Keep all records |
+| GDP_per_Capita | 0.91 | 1.40 | 0.49 | 0.18 | 2.13 | 0 | Keep all records |
+| Social_Support | 0.52 | 0.77 | 0.25 | 0.15 | 1.15 | 0 | Keep all records |
+| Healthy_Life_Expectancy | 51.18 | 73.30 | 22.12 | 17.99 | 106.49 | 0 | Keep all records |
+| Freedom_to_Make_Choices | 0.47 | 0.86 | 0.39 | -0.11 | 1.45 | 0 | Keep all records |
+| Generosity | 0.16 | 0.41 | 0.26 | -0.22 | 0.80 | 0 | Keep all records |
+| Perceptions_of_Corruption | 0.19 | 0.73 | 0.54 | -0.62 | 1.54 | 0 | Keep all records |
+
+The boxplot below uses the original value scale for each indicator. The red dashed lines show the IQR lower and upper bounds. A country point outside these bounds would be treated as a potential outlier.
+
+Some IQR bounds may fall outside a score's theoretical range, such as below 0 or above 1. This is acceptable because the bounds are statistical thresholds, not actual observed data values.
+
+![Matplotlib outlier boxplots](outputs/matplotlib_outlier_boxplots.png)
+
+Open the interactive Plotly outlier boxplot:
+
+```text
+outputs/plotly_outlier_boxplots.html
+```
 
 ## Three Happiest Countries
 
@@ -100,16 +128,6 @@ The table below summarises the supporting indicators across all countries in the
 | Generosity | 0.30 | 0.01 | 0.57 |
 | Perceptions_of_Corruption | 0.50 | 0.10 | 0.86 |
 
-### Plotly Relationship View
-
-Open the interactive Plotly scatter chart:
-
-```text
-outputs/plotly_happiness_freedom_relationship.html
-```
-
-This chart places `Freedom_to_Make_Choices` on the x-axis and `Happiness_Score` on the y-axis. Marker size represents `GDP_per_Capita`, colour represents `Social_Support`, and hover text shows the remaining indicators. This makes the dashboard use the wider dataset instead of relying only on the Happiness and Freedom columns.
-
 ### Matplotlib Scatter Plot: Freedom vs Happiness
 
 The static scatter plot below focuses specifically on the relationship between `Freedom_to_Make_Choices` and `Happiness_Score`. A scatter plot is appropriate here because both variables are numeric, and the goal is to inspect whether countries with higher Freedom scores also tend to have higher Happiness scores.
@@ -137,12 +155,6 @@ The heatmap below shows the full correlation matrix for `Happiness_Score` and al
 
 ![Matplotlib happiness correlation heatmap](outputs/matplotlib_happiness_correlations.png)
 
-Open the interactive Plotly correlation heatmap:
-
-```text
-outputs/plotly_happiness_correlations.html
-```
-
 These correlations describe relationships in this dataset only. They do not prove that any indicator causes Happiness score to increase or decrease.
 
 ## Chart Choice
@@ -155,5 +167,6 @@ A bar chart is the most appropriate chart type for comparing the happiness score
 - Canada has the highest happiness score in this dataset.
 - South Africa has the lowest happiness score.
 - South Africa's Freedom score is relatively high compared with its happiness score, which suggests that the Happiness score should not be interpreted through Freedom alone in this dataset.
+- The IQR outlier check did not identify any outlier records, so all records were kept.
 - The supporting indicators are useful for descriptive comparison, but the dashboard does not make causal claims about their effect on Happiness score.
 - Correlation analysis helps identify which supporting indicators are more strongly associated with Happiness score, but it should not be interpreted as causation.
