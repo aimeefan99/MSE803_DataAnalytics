@@ -2,11 +2,11 @@
 
 ## Objective
 
-This update adds outlier detection to the Week 4 Activity 1.1 Happiness Dashboard. The purpose is to check whether any country records contain unusually high or low numeric values before using the data for visualisation and interpretation.
+This update adds outlier detection to the Week 4 Activity 1.1 Happiness Dashboard. Outliers are data points that differ noticeably from the rest of the dataset. They may be caused by data entry issues, measurement problems, or genuine variability between countries. Checking them helps improve data quality before visualisation, reduces the risk of misleading findings, and supports a justified keep/drop decision.
 
 ## Method
 
-The analysis uses the **IQR method**, which is also used in the provided outlier sample code.
+The analysis uses the **IQR method**, following the approach demonstrated in the provided outlier sample code. IQR is appropriate here because it is simple, robust, and does not require the data to follow a normal distribution.
 
 For each numeric column:
 
@@ -15,7 +15,7 @@ For each numeric column:
 - IQR is calculated as `Q3 - Q1`.
 - A value is flagged as a potential outlier if it is lower than `Q1 - 1.5 * IQR` or higher than `Q3 + 1.5 * IQR`.
 
-IQR is appropriate here because it is simple, easy to explain, and does not require the data to follow a normal distribution.
+The Z-score method is another common option, but it is more suitable when the data is approximately normally distributed. Since this dataset is small and contains different country-level indicators, IQR is a more practical choice for this activity.
 
 ## Code Implementation
 
