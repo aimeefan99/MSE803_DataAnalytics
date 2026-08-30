@@ -43,7 +43,11 @@ BASE_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = BASE_DIR / "outputs"
 CLEANED_DATA_FILE = BASE_DIR / "cleaned_iris_dataset.csv"
 
-SVM_KERNEL = "linear"
+TEST_SIZE = 0.3
+
+# Change these two values to test how the SVM result changes.
+SVM_KERNEL = "rbf"
+RANDOM_STATE = 30
 
 CONFUSION_MATRIX_FILE = OUTPUT_DIR / "svm_confusion_matrix.png"
 PETAL_SCATTER_FILE = OUTPUT_DIR / "iris_petal_scatter.png"
@@ -74,8 +78,8 @@ def train_and_evaluate_model(x, y):
     x_train, x_test, y_train, y_test = train_test_split(
         x,
         y,
-        test_size=0.3,
-        random_state=42,
+        test_size=TEST_SIZE,
+        random_state=RANDOM_STATE,
         stratify=y,
     )
 
@@ -101,6 +105,7 @@ def train_and_evaluate_model(x, y):
     metrics = {
         "Model": "SVM Classifier (SVC)",
         "Kernel": SVM_KERNEL,
+        "Random_State": RANDOM_STATE,
         "Training_Records": len(x_train),
         "Testing_Records": len(x_test),
         "Accuracy": accuracy_score(y_test, y_pred),
@@ -137,7 +142,7 @@ def create_confusion_matrix_plot(y_test, y_pred, class_names):
     display = ConfusionMatrixDisplay(confusion_matrix=matrix, display_labels=class_names)
     fig, ax = plt.subplots(figsize=(7, 6))
     display.plot(ax=ax, cmap="Blues", colorbar=True, values_format="d")
-    ax.set_title("SVM Classifier with Linear Kernel: Confusion Matrix")
+    ax.set_title(f"SVM Classifier with {SVM_KERNEL} Kernel: Confusion Matrix")
     ax.set_xticklabels(class_names, rotation=25, ha="right")
     ax.set_yticklabels(class_names)
     fig.tight_layout()
@@ -253,7 +258,7 @@ def save_outputs(iris, x, y, results):
     create_petal_scatter_plot(x, y, class_names)
     create_confusion_matrix_plot(results["y_test"], results["prediction"], class_names)
 
-    print("Model: SVM Classifier (SVC, linear kernel)")
+    print(f"Model: SVM Classifier (SVC, {SVM_KERNEL} kernel)")
     print(f"Analysis outputs saved to: {OUTPUT_DIR}")
 
 

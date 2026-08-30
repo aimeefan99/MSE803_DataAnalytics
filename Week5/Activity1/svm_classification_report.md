@@ -56,7 +56,7 @@ The split uses `random_state=42` so that the same records are selected for train
 
 The scaler uses `fit_transform()` on the training data and `transform()` on the test data. This keeps the train/test split separate while applying the same scaling rule to both sets.
 
-If a different result is obtained, the main reasons are usually a different `random_state`, which changes the train/test samples, or a different SVM `kernel`, which changes the decision boundary used by the classifier.
+To observe different results, the script can be rerun after changing `SVM_KERNEL` or `RANDOM_STATE` near the top of `iris_svm_classification.py`. A different `random_state` changes the train/test samples, while a different SVM `kernel` changes the decision boundary used by the classifier.
 
 ## Data Visualisation
 

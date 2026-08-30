@@ -1,4 +1,4 @@
 Actual/Predicted,setosa,versicolor,virginica
 setosa,15,0,0
-versicolor,0,14,1
-virginica,0,3,12
+versicolor,0,13,2
+virginica,0,2,13

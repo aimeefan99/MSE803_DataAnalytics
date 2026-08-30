@@ -1,2 +1,2 @@
-Model,Kernel,Training_Records,Testing_Records,Accuracy,Weighted_Precision,Weighted_Recall
-SVM Classifier (SVC),linear,105,45,0.9111111111111111,0.9155354449472096,0.9111111111111111
+Model,Kernel,Random_State,Training_Records,Testing_Records,Accuracy,Weighted_Precision,Weighted_Recall
+SVM Classifier (SVC),rbf,30,105,45,0.9111111111111111,0.9111111111111111,0.9111111111111111
